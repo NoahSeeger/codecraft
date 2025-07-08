@@ -9,6 +9,7 @@ export interface Level {
   tutorial: string;
   solution: string;
   berries?: number; // Anzahl zu sammelnder Berries (optional)
+  difficulty: number; // 1-5
 }
 
 export const SYNTAX_HELP = `
@@ -63,6 +64,7 @@ export const levels: Level[] = [
     tutorial: "Sammle die Berry mit PICKUP und erreiche das Ziel.",
     solution: "MOVE\nPICKUP\nMOVE",
     berries: 1,
+    difficulty: 1,
   },
   {
     id: 2,
@@ -77,6 +79,7 @@ export const levels: Level[] = [
     tutorial: "Sammle beide Berries und erreiche das Ziel.",
     solution: "MOVE\nPICKUP\nMOVE\nMOVE\nPICKUP\nMOVE",
     berries: 2,
+    difficulty: 2,
   },
   {
     id: 3,
@@ -93,6 +96,7 @@ export const levels: Level[] = [
     solution:
       "IF ISBLOCKED\n  TURN DOWN\n  MOVE\n  PICKUP\n  TURN RIGHT\n  MOVE\nELSE\n  MOVE\nEND\nMOVE",
     berries: 1,
+    difficulty: 3,
   },
   {
     id: 4,
@@ -107,6 +111,7 @@ export const levels: Level[] = [
     tutorial: "Sammle alle Berries mit einer Schleife.",
     solution: "WHILE GETBLOCK == berry\n  MOVE\n  PICKUP\nEND\nMOVE",
     berries: 3,
+    difficulty: 3,
   },
   {
     id: 5,
@@ -122,5 +127,6 @@ export const levels: Level[] = [
     solution:
       "WHILE NOT ISBLOCKED\n  IF GETBLOCK == berry\n    MOVE\n    PICKUP\n  ELSE\n    MOVE\n  END\nEND",
     berries: 2,
+    difficulty: 4,
   },
 ];
