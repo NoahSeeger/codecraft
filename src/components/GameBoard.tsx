@@ -8,11 +8,13 @@ interface GameBoardProps {
     y: number;
     direction: "up" | "down" | "left" | "right";
   };
+  berriesCollected?: number[]; // Indizes der gesammelten Berries (optional)
 }
 
 const tileChar = (tile: string) => {
   if (tile === "wall") return "█";
   if (tile === "goal") return "⚑";
+  if (tile === "berry") return "¤"; // Hacker-Style Berry
   if (tile === "empty" || tile === "start") return ".";
   return "?";
 };

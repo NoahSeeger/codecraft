@@ -1,12 +1,13 @@
 "use client";
 
 import { GameBoard } from "../components/GameBoard";
-import { levels } from "../levels/levels";
+import { levels, SYNTAX_HELP } from "../levels/levels";
 import { CodeEditor } from "../components/CodeEditor";
 import React, { useState, useRef, useEffect } from "react";
 import { validatePseudoCode } from "../utils/pseudocodeValidation";
 import { executePseudoCode, RobotState } from "../utils/pseudocodeInterpreter";
 import Split from "split.js";
+import { PSEUDOCODE_COMMANDS } from "../utils/pseudocodeCommands";
 
 export default function Home() {
   const [levelIndex, setLevelIndex] = useState(0);
@@ -17,6 +18,8 @@ export default function Home() {
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [levelCompleted, setLevelCompleted] = useState(false);
+  const [showSyntax, setShowSyntax] = useState(false);
+  const [showSolutionConfirm, setShowSolutionConfirm] = useState(false);
 
   // Split.js Refs
   const col1Ref = useRef<HTMLDivElement>(null); // Aufgabe
@@ -86,7 +89,8 @@ export default function Home() {
     setLogs([]);
     setLevelCompleted(false);
     let success = false;
-    const history = executePseudoCode(code, level);
+    const result = executePseudoCode(code, level);
+    const history = result.states;
     for (let i = 1; i < history.length; i++) {
       await new Promise((res) => setTimeout(res, 400));
       setRobotPosition(history[i]);
@@ -96,12 +100,26 @@ export default function Home() {
       ]);
     }
     setIsRunning(false);
-    // Ziel-Check
+    // Ziel-Check + Berries
     const last = history[history.length - 1];
-    if (last.x === level.goal.x && last.y === level.goal.y) {
-      setLogs((prev) => [...prev, "> Success: Ziel erreicht!"]);
+    const allBerriesCollected = Object.values(result.berries).every((v) => v);
+    if (
+      last.x === level.goal.x &&
+      last.y === level.goal.y &&
+      allBerriesCollected
+    ) {
+      setLogs((prev) => [
+        ...prev,
+        "> Success: Ziel und alle Berries erreicht!",
+      ]);
       setLevelCompleted(true);
       success = true;
+    } else if (!allBerriesCollected) {
+      setLogs((prev) => [
+        ...prev,
+        "> Fehler: Nicht alle Berries eingesammelt.",
+      ]);
+      setTimeout(() => setRobotPosition(level.start), 1200);
     } else {
       setLogs((prev) => [...prev, "> Fehler: Ziel nicht erreicht."]);
       setTimeout(() => setRobotPosition(level.start), 1200);
@@ -152,7 +170,139 @@ export default function Home() {
         background: "var(--terminal-bg)",
       }}
     >
-      <h1>CodeCraft – Pseudo-Code Puzzle Game</h1>
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 8,
+        }}
+      >
+        <h1 style={{ flex: 1, textAlign: "center" }}>
+          CodeCraft – Pseudo-Code Puzzle Game
+        </h1>
+        <button
+          onClick={() => setShowSyntax(true)}
+          style={{
+            color: "var(--terminal-cyan)",
+            fontWeight: "bold",
+            fontSize: 18,
+            marginLeft: 16,
+            border: "1px solid var(--terminal-cyan)",
+            background: "var(--terminal-bg)",
+            padding: "4px 16px",
+            borderRadius: 4,
+          }}
+        >
+          [ SYNTAX ]
+        </button>
+      </div>
+      {showSyntax && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(10,20,10,0.92)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => setShowSyntax(false)}
+        >
+          <div
+            style={{
+              background: "#181818",
+              color: "var(--terminal-green)",
+              border: "2px solid var(--terminal-cyan)",
+              borderRadius: 8,
+              padding: 32,
+              width: "70vw",
+              height: "50vh",
+              maxWidth: 900,
+              maxHeight: "80vh",
+              boxShadow: "0 0 32px #000",
+              fontFamily: "inherit",
+              fontSize: 16,
+              whiteSpace: "pre-wrap",
+              position: "relative",
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                fontWeight: "bold",
+                color: "var(--terminal-cyan)",
+                fontSize: 20,
+                marginBottom: 12,
+              }}
+            >
+              Pseudo-Code Syntax
+            </div>
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              {PSEUDOCODE_COMMANDS.map((cmd) => (
+                <div
+                  key={cmd.name}
+                  style={{
+                    marginBottom: 14,
+                    padding: "8px 0 8px 0",
+                    borderBottom: "1px solid #222",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: "var(--terminal-green)",
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    {cmd.example ? (
+                      <span style={{ color: "var(--terminal-cyan)" }}>
+                        {cmd.example}
+                      </span>
+                    ) : (
+                      cmd.name
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      color: "var(--terminal-green)",
+                      fontSize: 15,
+                      marginTop: 2,
+                    }}
+                  >
+                    {cmd.description}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowSyntax(false)}
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 16,
+                color: "var(--terminal-red)",
+                background: "none",
+                border: "none",
+                fontWeight: "bold",
+                fontSize: 18,
+                cursor: "pointer",
+              }}
+            >
+              [ X ]
+            </button>
+          </div>
+        </div>
+      )}
       <div
         style={{
           display: "flex",
@@ -230,7 +380,15 @@ export default function Home() {
               ))}
             </select>
           </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 8, width: "100%" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              marginTop: 8,
+              width: "100%",
+              flexWrap: "wrap",
+            }}
+          >
             <span style={{ color: "var(--terminal-cyan)" }}>{">"}</span>
             <button
               onClick={handleRun}
@@ -250,7 +408,65 @@ export default function Home() {
                 [ NEXT ]
               </button>
             )}
+            <button
+              onClick={() => setShowSolutionConfirm(true)}
+              style={{ color: "var(--terminal-red)" }}
+            >
+              [ LÖSUNG ]
+            </button>
           </div>
+          {showSyntax && (
+            <pre
+              style={{
+                marginTop: 12,
+                background: "#181818",
+                color: "var(--terminal-green)",
+                border: "1px solid var(--terminal-green)",
+                padding: 8,
+                borderRadius: 4,
+                fontSize: 15,
+                whiteSpace: "pre-wrap",
+                maxWidth: 320,
+              }}
+            >
+              {level.syntax}
+            </pre>
+          )}
+          {showSolutionConfirm && (
+            <div
+              style={{
+                marginTop: 12,
+                background: "#181818",
+                color: "var(--terminal-yellow)",
+                border: "1px solid var(--terminal-yellow)",
+                padding: 8,
+                borderRadius: 4,
+                fontSize: 15,
+                maxWidth: 320,
+              }}
+            >
+              <div>
+                Bist du sicher? Die Lösung wird deinen aktuellen Code ersetzen.
+              </div>
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <button
+                  onClick={() => {
+                    setCode(level.solution);
+                    setShowSolutionConfirm(false);
+                  }}
+                  style={{ color: "var(--terminal-green)" }}
+                >
+                  [ Ja, Lösung anzeigen ]
+                </button>
+                <button
+                  onClick={() => setShowSolutionConfirm(false)}
+                  style={{ color: "var(--terminal-red)" }}
+                >
+                  [ Abbrechen ]
+                </button>
+              </div>
+            </div>
+          )}
         </div>
         {/* Spalte 2: CodeEditor + Console (vertikal gesplittet) */}
         <div
