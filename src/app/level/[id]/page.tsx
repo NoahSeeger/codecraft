@@ -7,6 +7,7 @@ import { CodeEditor } from "../../../components/CodeEditor";
 import { validatePseudoCode } from "../../../utils/pseudocodeValidation";
 import { executePseudoCode } from "../../../utils/pseudocodeInterpreter";
 import Split from "split.js";
+import { PSEUDOCODE_COMMANDS } from "../../../utils/pseudocodeCommands";
 
 export default function LevelDetailPage() {
   const params = useParams();
@@ -19,6 +20,7 @@ export default function LevelDetailPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [levelCompleted, setLevelCompleted] = useState(false);
   const [showSolutionConfirm, setShowSolutionConfirm] = useState(false);
+  const [showSyntax, setShowSyntax] = useState(false);
   const errors = validatePseudoCode(code);
 
   // Split.js Refs
@@ -48,29 +50,36 @@ export default function LevelDetailPage() {
 
   // Split.js Setup
   useEffect(() => {
+    // Nur einmal horizontale Split-Initialisierung für die drei Spalten
+    let splitInstance: any;
     if (col1Ref.current && col2Ref.current && col3Ref.current) {
-      Split([col1Ref.current, col2Ref.current, col3Ref.current], {
-        direction: "horizontal",
-        sizes: [20, 40, 40],
-        minSize: [180, 250, 200],
-        gutterSize: 12,
-        gutter: (index, direction) => {
-          const gutter = document.createElement("div");
-          gutter.className = `gutter gutter-${direction}`;
-          gutter.innerHTML =
-            '<span style="color:#39FF14;font-size:18px;user-select:none;">||</span>';
-          gutter.style.display = "flex";
-          gutter.style.alignItems = "center";
-          gutter.style.justifyContent = "center";
-          gutter.style.background = "#222";
-          gutter.style.cursor = "col-resize";
-          gutter.style.height = "100%";
-          return gutter;
-        },
-      });
+      splitInstance = Split(
+        [col1Ref.current, col2Ref.current, col3Ref.current],
+        {
+          direction: "horizontal",
+          sizes: [20, 40, 40],
+          minSize: [180, 250, 200],
+          gutterSize: 12,
+          gutter: (index, direction) => {
+            const gutter = document.createElement("div");
+            gutter.className = `gutter gutter-${direction}`;
+            gutter.innerHTML =
+              '<span style="color:#39FF14;font-size:18px;user-select:none;">||</span>';
+            gutter.style.display = "flex";
+            gutter.style.alignItems = "center";
+            gutter.style.justifyContent = "center";
+            gutter.style.background = "#222";
+            gutter.style.cursor = "col-resize";
+            gutter.style.height = "100%";
+            return gutter;
+          },
+        }
+      );
     }
+    // Vertikaler Split NUR innerhalb von col2Ref
+    let splitVert: any;
     if (codeRef.current && consoleRef.current) {
-      Split([codeRef.current, consoleRef.current], {
+      splitVert = Split([codeRef.current, consoleRef.current], {
         direction: "vertical",
         sizes: [65, 35],
         minSize: [80, 60],
@@ -90,6 +99,11 @@ export default function LevelDetailPage() {
         },
       });
     }
+    return () => {
+      // Clean up Split.js instances
+      if (splitInstance && splitInstance.destroy) splitInstance.destroy();
+      if (splitVert && splitVert.destroy) splitVert.destroy();
+    };
   }, []);
 
   const handleRun = async () => {
@@ -189,57 +203,201 @@ export default function LevelDetailPage() {
           alignItems: "center",
           justifyContent: "center",
           marginBottom: 8,
+          gap: 0,
+          minHeight: 56,
         }}
       >
-        <button
-          onClick={() => router.push("/level")}
-          style={{
-            color: "var(--terminal-cyan)",
-            background: "none",
-            border: "1px solid var(--terminal-cyan)",
-            borderRadius: 4,
-            padding: "4px 16px",
-            fontWeight: "bold",
-            marginBottom: 16,
-            cursor: "pointer",
-          }}
-        >
-          [ Zurück zur Auswahl ]
-        </button>
-        <h2
-          style={{
-            color: "var(--terminal-green)",
-            fontSize: 28,
-            marginBottom: 8,
-          }}
-        >
-          {level.name}{" "}
+        {/* Zurück-Button links */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
+          <button
+            onClick={() => router.push("/level")}
+            style={{
+              color: "var(--terminal-cyan)",
+              background: "none",
+              border: "1px solid var(--terminal-cyan)",
+              borderRadius: 4,
+              padding: "4px 16px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontSize: 18,
+              marginLeft: 8,
+            }}
+          >
+            [ Zurück zur Auswahl ]
+          </button>
+        </div>
+        {/* Levelname und Schwierigkeit zentriert */}
+        <div style={{ flex: 2, textAlign: "center" }}>
+          <span
+            style={{
+              color: "var(--terminal-green)",
+              fontSize: 26,
+              fontWeight: "bold",
+              letterSpacing: 1,
+            }}
+          >
+            {level.name}
+          </span>
           {levelCompleted && (
-            <span style={{ color: "var(--terminal-green)", fontSize: 24 }}>
+            <span
+              style={{
+                color: "var(--terminal-green)",
+                fontSize: 22,
+                marginLeft: 8,
+              }}
+            >
               ✔️
             </span>
           )}
-        </h2>
-        <div
-          style={{
-            color: "var(--terminal-yellow)",
-            fontSize: 18,
-            marginBottom: 8,
-          }}
-        >
-          {"★".repeat(level.difficulty)}
-          {"☆".repeat(5 - level.difficulty)}
+          <span
+            style={{
+              color: "var(--terminal-yellow)",
+              fontSize: 20,
+              marginLeft: 16,
+            }}
+          >
+            {"★".repeat(level.difficulty)}
+            {"☆".repeat(5 - level.difficulty)}
+          </span>
         </div>
+        {/* ?-Button rechts */}
         <div
           style={{
-            color: "var(--terminal-cyan)",
-            fontSize: 16,
-            marginBottom: 16,
+            flex: 1,
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
           }}
         >
-          {level.tutorial}
+          <button
+            onClick={() => setShowSyntax(true)}
+            title="Syntax-Hilfe anzeigen"
+            style={{
+              color: "var(--terminal-cyan)",
+              background: "none",
+              border: "1.5px solid var(--terminal-cyan)",
+              borderRadius: "50%",
+              width: 36,
+              height: 36,
+              fontWeight: "bold",
+              fontSize: 22,
+              marginRight: 12,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 0 8px #00fff766",
+            }}
+          >
+            ?
+          </button>
         </div>
       </div>
+      {/* Syntax-Hilfe Overlay */}
+      {showSyntax && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(10,20,10,0.92)",
+            zIndex: 2000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => setShowSyntax(false)}
+        >
+          <div
+            style={{
+              background: "#181818",
+              color: "var(--terminal-green)",
+              border: "2px solid var(--terminal-cyan)",
+              borderRadius: 8,
+              padding: 32,
+              width: "80vw",
+              maxWidth: 700,
+              maxHeight: "80vh",
+              boxShadow: "0 0 32px #000",
+              fontFamily: "inherit",
+              fontSize: 16,
+              whiteSpace: "pre-wrap",
+              position: "relative",
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                fontWeight: "bold",
+                color: "var(--terminal-cyan)",
+                fontSize: 22,
+                marginBottom: 12,
+              }}
+            >
+              Pseudo-Code Syntax
+            </div>
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              {PSEUDOCODE_COMMANDS.map((cmd) => (
+                <div
+                  key={cmd.name}
+                  style={{
+                    marginBottom: 14,
+                    padding: "8px 0 8px 0",
+                    borderBottom: "1px solid #222",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: "var(--terminal-green)",
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    {cmd.example ? (
+                      <span style={{ color: "var(--terminal-cyan)" }}>
+                        {cmd.example}
+                      </span>
+                    ) : (
+                      cmd.name
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      color: "var(--terminal-green)",
+                      fontSize: 15,
+                      marginTop: 2,
+                    }}
+                  >
+                    {cmd.description}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowSyntax(false)}
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 16,
+                color: "var(--terminal-red)",
+                background: "none",
+                border: "none",
+                fontWeight: "bold",
+                fontSize: 22,
+                cursor: "pointer",
+              }}
+            >
+              [ X ]
+            </button>
+          </div>
+        </div>
+      )}
       <div
         style={{
           display: "flex",
@@ -286,6 +444,187 @@ export default function LevelDetailPage() {
               Ziel: Erreiche das Feld ⚑
             </span>
           </div>
+          {/* BUTTONS */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+              marginTop: 16,
+              width: "100%",
+              justifyContent: "flex-start",
+              alignItems: "center",
+              minHeight: 44,
+            }}
+          >
+            <span style={{ color: "var(--terminal-cyan)", minWidth: 18 }}>
+              {">"}
+            </span>
+            <button
+              onClick={handleRun}
+              disabled={isRunning || errors.length > 0}
+              style={{
+                color: "var(--terminal-green)",
+                fontWeight: "bold",
+                padding: "6px 18px",
+                fontSize: 17,
+                border: "2px solid var(--terminal-green)",
+                background: "#181818",
+                borderRadius: 5,
+                minWidth: 80,
+                margin: 0,
+                flex: "0 1 auto",
+                whiteSpace: "nowrap",
+              }}
+            >
+              [ RUN ]
+            </button>
+            <button
+              onClick={handleReset}
+              disabled={isRunning}
+              style={{
+                color: "var(--terminal-green)",
+                fontWeight: "bold",
+                padding: "6px 18px",
+                fontSize: 17,
+                border: "2px solid var(--terminal-green)",
+                background: "#181818",
+                borderRadius: 5,
+                minWidth: 80,
+                margin: 0,
+                flex: "0 1 auto",
+                whiteSpace: "nowrap",
+              }}
+            >
+              [ RESET ]
+            </button>
+            {levelCompleted && id < levels.length && (
+              <button
+                onClick={() => router.push(`/level/${id + 1}`)}
+                style={{
+                  color: "var(--terminal-yellow)",
+                  fontWeight: "bold",
+                  padding: "6px 18px",
+                  fontSize: 17,
+                  border: "2px solid var(--terminal-yellow)",
+                  background: "#181818",
+                  borderRadius: 5,
+                  minWidth: 80,
+                  margin: 0,
+                  flex: "0 1 auto",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                [ NEXT ]
+              </button>
+            )}
+            <button
+              onClick={() => setShowSolutionConfirm(true)}
+              style={{
+                color: "var(--terminal-red)",
+                fontWeight: "bold",
+                padding: "6px 18px",
+                fontSize: 17,
+                border: "2px solid var(--terminal-red)",
+                background: "#181818",
+                borderRadius: 5,
+                minWidth: 80,
+                margin: 0,
+                flex: "0 1 auto",
+                whiteSpace: "nowrap",
+              }}
+            >
+              [ LÖSUNG ]
+            </button>
+          </div>
+          {showSolutionConfirm && (
+            <div
+              style={{
+                marginTop: 16,
+                background: "#181818",
+                color: "var(--terminal-yellow)",
+                border: "2px solid var(--terminal-cyan)",
+                borderRadius: 8,
+                padding: 18,
+                fontSize: 15,
+                maxWidth: 340,
+                width: "100%",
+                boxShadow: "0 0 12px #000",
+                fontFamily: "inherit",
+                whiteSpace: "pre-wrap",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: "bold",
+                  color: "var(--terminal-cyan)",
+                  fontSize: 17,
+                  marginBottom: 8,
+                  textAlign: "center",
+                }}
+              >
+                Lösung für dieses Level
+              </div>
+              <pre
+                style={{
+                  color: "var(--terminal-green)",
+                  fontSize: 15,
+                  margin: 0,
+                  width: "100%",
+                  textAlign: "left",
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                }}
+              >
+                {level.solution}
+              </pre>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  marginTop: 12,
+                  width: "100%",
+                  justifyContent: "center",
+                }}
+              >
+                <button
+                  onClick={() => {
+                    setCode(level.solution);
+                    setShowSolutionConfirm(false);
+                  }}
+                  style={{
+                    color: "var(--terminal-green)",
+                    fontWeight: "bold",
+                    border: "2px solid var(--terminal-green)",
+                    background: "#181818",
+                    borderRadius: 5,
+                    padding: "6px 18px",
+                    fontSize: 15,
+                  }}
+                >
+                  [ Ja, Lösung einfügen ]
+                </button>
+                <button
+                  onClick={() => setShowSolutionConfirm(false)}
+                  style={{
+                    color: "var(--terminal-red)",
+                    fontWeight: "bold",
+                    border: "2px solid var(--terminal-red)",
+                    background: "#181818",
+                    borderRadius: 5,
+                    padding: "6px 18px",
+                    fontSize: 15,
+                  }}
+                >
+                  [ Abbrechen ]
+                </button>
+              </div>
+            </div>
+          )}
         </div>
         {/* Spalte 2: CodeEditor + Console (vertikal gesplittet) */}
         <div
@@ -392,22 +731,37 @@ export default function LevelDetailPage() {
       </div>
       <style>{`
         .gutter.gutter-horizontal {
-          background: #222;
+          background: #181818;
           cursor: col-resize;
-          width: 12px !important;
-          min-width: 12px;
+          width: 10px !important;
+          min-width: 10px;
           z-index: 10;
+          box-shadow: 0 0 6px #39ff1444;
+          border-left: 1px solid #222;
+          border-right: 1px solid #222;
+          transition: background 0.2s;
+        }
+        .gutter.gutter-horizontal:hover {
+          background: #232323;
+          box-shadow: 0 0 12px #39ff1488;
         }
         .gutter.gutter-vertical {
-          background: #222;
+          background: #181818;
           cursor: row-resize;
-          height: 10px !important;
-          min-height: 10px;
+          height: 8px !important;
+          min-height: 8px;
           z-index: 10;
+          box-shadow: 0 0 6px #39ff1444;
+          border-top: 1px solid #222;
+          border-bottom: 1px solid #222;
+          transition: background 0.2s;
+        }
+        .gutter.gutter-vertical:hover {
+          background: #232323;
+          box-shadow: 0 0 12px #39ff1488;
         }
         .gutter span {
-          pointer-events: none;
-          user-select: none;
+          display: none;
         }
       `}</style>
     </main>

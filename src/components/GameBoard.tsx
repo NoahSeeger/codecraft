@@ -12,19 +12,35 @@ interface GameBoardProps {
 }
 
 const tileChar = (tile: string) => {
-  if (tile === "wall") return "█";
-  if (tile === "goal") return "⚑";
-  if (tile === "berry") return "¤"; // Hacker-Style Berry
-  if (tile === "empty" || tile === "start") return ".";
-  return "?";
+  if (tile === "wall")
+    return (
+      <span
+        style={{ color: "#39FF14", background: "#222", fontWeight: "bold" }}
+      >
+        █
+      </span>
+    );
+  if (tile === "goal")
+    return <span style={{ color: "#FFD600", fontWeight: "bold" }}>⚑</span>;
+  if (tile === "berry")
+    return <span style={{ color: "#00fff7", fontWeight: "bold" }}>$</span>;
+  if (tile === "empty" || tile === "start")
+    return <span style={{ color: "#444" }}>·</span>;
+  return <span>?</span>;
 };
 
 const robotChar = (direction: string) => {
-  if (direction === "up") return "^";
-  if (direction === "down") return "v";
-  if (direction === "left") return "<";
-  if (direction === "right") return ">";
-  return "R";
+  // Neon-Grün mit Schatten für Sichtbarkeit
+  const style = {
+    color: "#39FF14",
+    textShadow: "0 0 6px #39FF14, 0 0 2px #39FF14",
+    fontWeight: "bold" as const,
+  };
+  if (direction === "up") return <span style={style}>▲</span>;
+  if (direction === "down") return <span style={style}>▼</span>;
+  if (direction === "left") return <span style={style}>◀</span>;
+  if (direction === "right") return <span style={style}>▶</span>;
+  return <span style={style}>R</span>;
 };
 
 export const GameBoard: React.FC<GameBoardProps> = ({
@@ -42,12 +58,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       const height = containerRef.current!.offsetHeight;
       const cols = level.grid[0].length;
       const rows = level.grid.length;
-      // 0.9 Faktor für Padding, 1.8 für Zeilenhöhe
-      const sizeW = (width / cols) * 0.9;
-      const sizeH = height / rows / 1.2;
+      // Dynamische Anpassung: Je mehr Felder, desto kleiner die Schrift
+      // 0.95 für etwas Padding, 1.25 für Zeilenhöhe
+      const sizeW = (width / cols) * 0.95;
+      const sizeH = (height / rows) * 0.95;
       setFontSize(Math.floor(Math.min(sizeW, sizeH, 80)));
     };
-    resize();
+    // Initial-Resize nach dem Render (Workaround für Split.js/SSR)
+    requestAnimationFrame(resize);
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
   }, [level.grid]);
@@ -61,39 +79,60 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        background: "#111",
+        border: "2px solid #39FF14",
+        borderRadius: 8,
+        boxShadow: "0 0 16px #111",
+        overflow: "hidden",
       }}
     >
-      <pre
+      <div
         style={{
-          fontFamily: "inherit",
-          color: "var(--terminal-green)",
-          background: "var(--terminal-bg)",
-          fontSize,
-          lineHeight: 1.1,
-          margin: 0,
-          padding: 0,
           width: "100%",
           height: "100%",
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
           alignItems: "center",
-          overflow: "hidden",
-          userSelect: "none",
+          justifyContent: "center",
+          background: "#181818",
+          borderRadius: 6,
+          border: "1.5px solid #222",
         }}
       >
-        {level.grid.map(
-          (row, y) =>
-            row
-              .map((tile, x) => {
-                if (robotPosition.x === x && robotPosition.y === y) {
-                  return robotChar(robotPosition.direction);
-                }
-                return tileChar(tile);
-              })
-              .join("") + "\n"
-        )}
-      </pre>
+        <pre
+          style={{
+            fontFamily: "inherit",
+            color: "var(--terminal-green)",
+            background: "transparent",
+            fontSize,
+            lineHeight: 1.1,
+            margin: 0,
+            padding: 0,
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            overflow: "hidden",
+            userSelect: "none",
+            letterSpacing: 2,
+          }}
+        >
+          {level.grid.map((row, y) => (
+            <div key={y}>
+              {row.map((tile, x) =>
+                robotPosition.x === x && robotPosition.y === y ? (
+                  <span key={`${x}-${y}`}>
+                    {robotChar(robotPosition.direction)}
+                  </span>
+                ) : (
+                  <span key={`${x}-${y}`}>{tileChar(tile)}</span>
+                )
+              )}
+            </div>
+          ))}
+        </pre>
+      </div>
     </div>
   );
 };
