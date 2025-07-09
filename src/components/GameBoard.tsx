@@ -121,7 +121,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           {level.grid.map((row, y) => (
             <div key={y}>
               {row.map((tile, x) =>
-                robotPosition.x === x && robotPosition.y === y ? (
+                robotPosition &&
+                typeof robotPosition.x === "number" &&
+                typeof robotPosition.y === "number" &&
+                robotPosition.x === x &&
+                robotPosition.y === y ? (
                   <span key={`${x}-${y}`}>
                     {robotChar(robotPosition.direction)}
                   </span>

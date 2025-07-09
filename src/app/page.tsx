@@ -39,24 +39,51 @@ export default function Home() {
         Löse knifflige Pseudo-Code-Puzzles, sammle Berries und lerne
         Programmierlogik im Hacker-Style.
       </p>
-      <Link href="/level">
-        <button
-          style={{
-            fontSize: 28,
-            padding: "18px 48px",
-            color: "var(--terminal-green)",
-            background: "#181818",
-            border: "2px solid var(--terminal-green)",
-            borderRadius: 8,
-            fontWeight: "bold",
-            boxShadow: "0 0 16px #111",
-            cursor: "pointer",
-            marginBottom: 24,
-          }}
-        >
-          [ Level auswählen ]
-        </button>
-      </Link>
+      <div
+        style={{
+          display: "flex",
+          gap: 24,
+          justifyContent: "center",
+          marginBottom: 40,
+        }}
+      >
+        <Link href="/level">
+          <button
+            style={{
+              fontSize: 28,
+              padding: "18px 48px",
+              color: "var(--terminal-green)",
+              background: "#181818",
+              border: "2px solid var(--terminal-green)",
+              borderRadius: 8,
+              fontWeight: "bold",
+              boxShadow: "0 0 16px #111",
+              cursor: "pointer",
+              minWidth: 260,
+            }}
+          >
+            [ Level auswählen ]
+          </button>
+        </Link>
+        <Link href="/create">
+          <button
+            style={{
+              fontSize: 28,
+              padding: "18px 48px",
+              color: "var(--terminal-green)",
+              background: "#181818",
+              border: "2px solid var(--terminal-green)",
+              borderRadius: 8,
+              fontWeight: "bold",
+              boxShadow: "0 0 16px #111",
+              cursor: "pointer",
+              minWidth: 260,
+            }}
+          >
+            [ Create Level ]
+          </button>
+        </Link>
+      </div>
       <div
         style={{ color: "var(--terminal-yellow)", marginTop: 32, fontSize: 16 }}
       >

@@ -13,35 +13,58 @@ export default function LevelDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = Number(params.id);
-  const level = levels.find((l) => l.id === id);
+  // Kombiniere Standard-Levels und User-Levels aus localStorage
+  const [level, setLevel] = useState<any>(null);
+
+  useEffect(() => {
+    // User-Levels aus localStorage laden
+    let allLevels = [...levels];
+    try {
+      const userRaw = localStorage.getItem("userLevels");
+      if (userRaw) {
+        const userArr = JSON.parse(userRaw);
+        if (Array.isArray(userArr)) {
+          // IDs der Standardlevels
+          const stdIds = new Set(levels.map((l) => l.id));
+          // Nur User-Levels, die nicht schon als Standardlevel existieren
+          const filtered = userArr.filter((l) => !stdIds.has(l.id));
+          allLevels = [...levels, ...filtered];
+        }
+      }
+    } catch {}
+    const found = allLevels.find((l) => l.id === id);
+    setLevel(found || null);
+  }, [id]);
+
+  // States, die vom geladenen Level abhängen
   const [code, setCode] = useState("");
-  const [robotPosition, setRobotPosition] = useState(level?.start);
+  const [robotPosition, setRobotPosition] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [levelCompleted, setLevelCompleted] = useState(false);
   const [showSolutionConfirm, setShowSolutionConfirm] = useState(false);
   const [showSyntax, setShowSyntax] = useState(false);
-  const errors = validatePseudoCode(code);
-
   // Split.js Refs
   const col1Ref = useRef<HTMLDivElement>(null); // Aufgabe
   const col2Ref = useRef<HTMLDivElement>(null); // Code+Console
   const col3Ref = useRef<HTMLDivElement>(null); // GameBoard
   const codeRef = useRef<HTMLDivElement>(null);
   const consoleRef = useRef<HTMLDivElement>(null);
-
   // Local Storage Key
-  const codeKey = `levelCode_${id}`;
+  const codeKey = `levelCode_${level?.id ?? "unknown"}`;
+  // Fehler im Code
+  const errors = validatePseudoCode(code);
 
   useEffect(() => {
     if (!level) return;
     // Lade Code aus Local Storage
     const saved = localStorage.getItem(codeKey);
     if (saved) setCode(saved);
+    else setCode("");
     setRobotPosition(level.start);
     setLogs([]);
     setLevelCompleted(false);
-  }, [id, level]);
+  }, [level, codeKey]);
 
   useEffect(() => {
     if (!level) return;
