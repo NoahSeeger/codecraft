@@ -24,11 +24,9 @@ IF <BEDINGUNG>
   ...
 [ELSE
   ...]
-END
 
 WHILE <BEDINGUNG>
   ...
-END
 
 Bedingungen:
   ISBLOCKED
@@ -36,16 +34,21 @@ Bedingungen:
   GETBLOCK == berry
   GETBLOCK == free
 
+Blöcke werden durch Einrückung (2 Leerzeichen) markiert, ähnlich wie in Python. Ein IF/ELSE/WHILE gilt für alle eingerückten Zeilen darunter.
+
 Beispiele:
 IF ISBLOCKED
+  TURN DOWN
+  MOVE
+  PICKUP
   TURN RIGHT
+  MOVE
 ELSE
   MOVE
 END
 
 WHILE NOT ISBLOCKED
   MOVE
-END
 
 PICKUP
 `;
@@ -53,7 +56,24 @@ PICKUP
 export const levels: Level[] = [
   {
     id: 1,
-    name: "Level 1: Berry Pickup",
+    name: "Tutorial 1: MOVE & TURN",
+    grid: [
+      ["wall", "wall", "wall", "wall", "wall"],
+      ["wall", "start", "empty", "empty", "wall"],
+      ["wall", "wall", "empty", "goal", "wall"],
+      ["wall", "wall", "wall", "wall", "wall"],
+    ],
+    start: { x: 1, y: 1, direction: "right" },
+    goal: { x: 3, y: 2 },
+    tutorial:
+      "Use MOVE to go forward and TURN LEFT/RIGHT to change direction. Reach the goal!",
+    solution: `# Use MOVE to go forward\n# Use TURN RIGHT to turn\nMOVE\nMOVE\nTURN RIGHT\nMOVE`,
+    berries: 0,
+    difficulty: 1,
+  },
+  {
+    id: 2,
+    name: "Tutorial 2: PICKUP",
     grid: [
       ["wall", "wall", "wall", "wall", "wall"],
       ["wall", "start", "berry", "goal", "wall"],
@@ -61,73 +81,58 @@ export const levels: Level[] = [
     ],
     start: { x: 1, y: 1, direction: "right" },
     goal: { x: 3, y: 1 },
-    tutorial: "Sammle die Berry mit PICKUP und erreiche das Ziel.",
-    solution: "MOVE\nPICKUP\nMOVE",
+    tutorial: "Use PICKUP to collect the berry and reach the goal.",
+    solution: `# Use MOVE to go forward\n# Use PICKUP to collect the berry\nMOVE\nPICKUP\nMOVE`,
     berries: 1,
     difficulty: 1,
   },
   {
-    id: 2,
-    name: "Level 2: Zwei Berries",
-    grid: [
-      ["wall", "wall", "wall", "wall", "wall", "wall"],
-      ["wall", "start", "berry", "empty", "berry", "goal"],
-      ["wall", "wall", "wall", "wall", "wall", "wall"],
-    ],
-    start: { x: 1, y: 1, direction: "right" },
-    goal: { x: 5, y: 1 },
-    tutorial: "Sammle beide Berries und erreiche das Ziel.",
-    solution: "MOVE\nPICKUP\nMOVE\nMOVE\nPICKUP\nMOVE",
-    berries: 2,
-    difficulty: 2,
-  },
-  {
     id: 3,
-    name: "Level 3: IF und Blockade",
+    name: "Tutorial 3: IF",
     grid: [
       ["wall", "wall", "wall", "wall", "wall"],
       ["wall", "start", "empty", "wall", "goal"],
-      ["wall", "berry", "empty", "empty", "wall"],
       ["wall", "wall", "wall", "wall", "wall"],
     ],
     start: { x: 1, y: 1, direction: "right" },
     goal: { x: 4, y: 1 },
-    tutorial: "Nutze IF, um um die Wand zu kommen und die Berry zu holen.",
-    solution:
-      "IF ISBLOCKED\n  TURN DOWN\n  MOVE\n  PICKUP\n  TURN RIGHT\n  MOVE\nELSE\n  MOVE\nEND\nMOVE",
-    berries: 1,
-    difficulty: 3,
+    tutorial:
+      "Use IF to check for a wall. If blocked, turn right. Otherwise, move forward.",
+    solution: `# Use IF ISBLOCKED to check for a wall\n# Use ELSE for the alternative\nIF ISBLOCKED\n  TURN RIGHT\nELSE\n  MOVE`,
+    berries: 0,
+    difficulty: 2,
   },
   {
     id: 4,
-    name: "Level 4: WHILE und mehrere Berries",
+    name: "Tutorial 4: WHILE",
     grid: [
-      ["wall", "wall", "wall", "wall", "wall", "wall", "wall"],
-      ["wall", "start", "berry", "berry", "berry", "goal", "wall"],
-      ["wall", "wall", "wall", "wall", "wall", "wall", "wall"],
+      ["wall", "wall", "wall", "wall", "wall", "wall"],
+      ["wall", "start", "berry", "berry", "goal", "wall"],
+      ["wall", "wall", "wall", "wall", "wall", "wall"],
     ],
     start: { x: 1, y: 1, direction: "right" },
-    goal: { x: 5, y: 1 },
-    tutorial: "Sammle alle Berries mit einer Schleife.",
-    solution: "WHILE GETBLOCK == berry\n  MOVE\n  PICKUP\nEND\nMOVE",
-    berries: 3,
-    difficulty: 3,
+    goal: { x: 4, y: 1 },
+    tutorial:
+      "Use WHILE to repeat actions. Collect all berries and reach the goal.",
+    solution: `# Use WHILE to repeat as long as there is a berry ahead\nWHILE GETBLOCK == berry\n  MOVE\n  PICKUP\nMOVE`,
+    berries: 2,
+    difficulty: 2,
   },
   {
     id: 5,
-    name: "Level 5: Komplexe Schleife",
+    name: "Tutorial 5: IF/ELSE & Nesting",
     grid: [
-      ["wall", "wall", "wall", "wall", "wall", "wall", "wall"],
-      ["wall", "start", "berry", "empty", "berry", "empty", "goal"],
-      ["wall", "wall", "wall", "wall", "wall", "wall", "wall"],
+      ["wall", "wall", "wall", "wall", "wall", "wall"],
+      ["wall", "start", "berry", "empty", "goal", "wall"],
+      ["wall", "wall", "wall", "wall", "wall", "wall"],
     ],
     start: { x: 1, y: 1, direction: "right" },
-    goal: { x: 6, y: 1 },
-    tutorial: "Sammle alle Berries, überspringe leere Felder.",
-    solution:
-      "WHILE NOT ISBLOCKED\n  IF GETBLOCK == berry\n    MOVE\n    PICKUP\n  ELSE\n    MOVE\n  END\nEND",
-    berries: 2,
-    difficulty: 4,
+    goal: { x: 4, y: 1 },
+    tutorial:
+      "Use IF/ELSE to handle different situations. Try to collect the berry if there is one ahead, otherwise just move.",
+    solution: `# Use IF/ELSE to check for a berry\nIF GETBLOCK == berry\n  MOVE\n  PICKUP\nELSE\n  MOVE`,
+    berries: 1,
+    difficulty: 3,
   },
   {
     id: 6,

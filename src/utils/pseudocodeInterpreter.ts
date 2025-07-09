@@ -31,97 +31,133 @@ export function executePseudoCode(
   code: string,
   level: Level
 ): InterpreterResult {
-  const lines = code
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
+  // Zeilen mit Einrückung erhalten
+  const lines = code.split(/\r?\n/).map((l) => l.replace(/\t/g, "  "));
   let state: RobotState = { ...level.start };
   let berries: { [key: string]: boolean } = {};
-  // Markiere alle Berries als nicht eingesammelt
   level.grid.forEach((row, y) =>
     row.forEach((tile, x) => {
       if (tile === "berry") berries[`${x},${y}`] = false;
     })
   );
   const history: RobotState[] = [state];
-  let i = 0;
-  const stack: number[] = [];
-  while (i < lines.length) {
-    const line = lines[i];
-    // Kontrollstrukturen (IF, ELSE, END, WHILE) speziell behandeln
-    if (line.startsWith("IF ")) {
-      let cond = false;
-      if (line === "IF ISBLOCKED") {
-        cond = getBlockAhead(state, level.grid) === "wall";
-      } else if (line === "IF NOT ISBLOCKED") {
-        cond = getBlockAhead(state, level.grid) !== "wall";
-      } else if (line === "IF GETBLOCK == berry") {
-        cond = getBlockAhead(state, level.grid) === "berry";
-      } else if (line === "IF GETBLOCK == free") {
-        cond =
-          getBlockAhead(state, level.grid) === "empty" ||
-          getBlockAhead(state, level.grid) === "start";
+
+  // Hilfsfunktion: Finde Block (alle eingerückten Zeilen unterhalb startIdx)
+  function getBlock(
+    startIdx: number,
+    baseIndent: number
+  ): { start: number; end: number } {
+    let end = startIdx + 1;
+    while (end < lines.length) {
+      const indent = lines[end].match(/^ */)?.[0].length || 0;
+      if (lines[end].trim() === "" || indent > baseIndent) {
+        end++;
+      } else {
+        break;
       }
-      // Suche zugehöriges ELSE/END
-      let elseIdx = -1,
-        endIdx = -1;
-      for (let j = i + 1, depth = 1; j < lines.length; j++) {
-        if (lines[j].startsWith("IF ")) depth++;
-        if (lines[j] === "END") {
-          depth--;
-          if (depth === 0) {
-            endIdx = j;
+    }
+    return { start: startIdx + 1, end };
+  }
+
+  // Interpreter-Loop
+  function runBlock(start: number, end: number) {
+    let i = start;
+    while (i < end) {
+      const rawLine = lines[i];
+      if (!rawLine.trim()) {
+        i++;
+        continue;
+      }
+      const indent = rawLine.match(/^ */)?.[0].length || 0;
+      const line = rawLine.trim();
+      // IF
+      if (line.startsWith("IF ")) {
+        let cond = false;
+        if (line === "IF ISBLOCKED") {
+          cond = getBlockAhead(state, level.grid) === "wall";
+        } else if (line === "IF NOT ISBLOCKED") {
+          cond = getBlockAhead(state, level.grid) !== "wall";
+        } else if (line === "IF GETBLOCK == berry") {
+          cond = getBlockAhead(state, level.grid) === "berry";
+        } else if (line === "IF GETBLOCK == free") {
+          cond =
+            getBlockAhead(state, level.grid) === "empty" ||
+            getBlockAhead(state, level.grid) === "start";
+        }
+        // Block finden
+        const { start: blockStart, end: blockEnd } = getBlock(i, indent);
+        // Suche nach ELSE auf gleicher Einrückung
+        let elseIdx = -1;
+        for (let j = blockStart; j < blockEnd; j++) {
+          const l = lines[j];
+          if (
+            l.trim().startsWith("ELSE") &&
+            (l.match(/^ */)?.[0].length || 0) === indent
+          ) {
+            elseIdx = j;
             break;
           }
         }
-        if (lines[j] === "ELSE" && depth === 1) elseIdx = j;
+        if (cond) {
+          // IF-Block ausführen
+          if (elseIdx === -1) {
+            runBlock(blockStart, blockEnd);
+          } else {
+            runBlock(blockStart, elseIdx);
+          }
+        } else if (elseIdx !== -1) {
+          // ELSE-Block ausführen
+          const { start: elseBlockStart, end: elseBlockEnd } = getBlock(
+            elseIdx,
+            indent
+          );
+          runBlock(elseBlockStart, elseBlockEnd);
+        }
+        // Nach dem gesamten IF/ELSE-Block weitermachen
+        i = blockEnd;
+        continue;
       }
-      if (cond) {
+      // ELSE (wird im IF behandelt)
+      if (line.startsWith("ELSE")) {
+        // Wird im IF behandelt, einfach überspringen
         i++;
-      } else if (elseIdx !== -1) {
-        i = elseIdx + 1;
-      } else {
-        i = endIdx + 1;
+        continue;
       }
-      stack.push(endIdx);
-    } else if (line === "ELSE") {
-      // Springe zum zugehörigen END
-      i = stack.pop()! + 1;
-    } else if (line === "END") {
-      i++;
-    } else if (line.startsWith("WHILE ")) {
-      let cond = false;
-      if (line === "WHILE ISBLOCKED") {
-        cond = getBlockAhead(state, level.grid) === "wall";
-      } else if (line === "WHILE NOT ISBLOCKED") {
-        cond = getBlockAhead(state, level.grid) !== "wall";
-      } else if (line === "WHILE GETBLOCK == berry") {
-        cond = getBlockAhead(state, level.grid) === "berry";
-      } else if (line === "WHILE GETBLOCK == free") {
-        cond =
-          getBlockAhead(state, level.grid) === "empty" ||
-          getBlockAhead(state, level.grid) === "start";
-      }
-      // Suche zugehöriges END
-      let endIdx = -1;
-      for (let j = i + 1, depth = 1; j < lines.length; j++) {
-        if (lines[j].startsWith("WHILE ")) depth++;
-        if (lines[j] === "END") {
-          depth--;
-          if (depth === 0) {
-            endIdx = j;
-            break;
+      // WHILE
+      if (line.startsWith("WHILE ")) {
+        const { start: blockStart, end: blockEnd } = getBlock(i, indent);
+        let cond = false;
+        if (line === "WHILE ISBLOCKED") {
+          cond = getBlockAhead(state, level.grid) === "wall";
+        } else if (line === "WHILE NOT ISBLOCKED") {
+          cond = getBlockAhead(state, level.grid) !== "wall";
+        } else if (line === "WHILE GETBLOCK == berry") {
+          cond = getBlockAhead(state, level.grid) === "berry";
+        } else if (line === "WHILE GETBLOCK == free") {
+          cond =
+            getBlockAhead(state, level.grid) === "empty" ||
+            getBlockAhead(state, level.grid) === "start";
+        }
+        while (cond) {
+          runBlock(blockStart, blockEnd);
+          // Nach jedem Block-Durchlauf aktuellen state übernehmen
+          // Bedingung nach jedem Durchlauf neu prüfen
+          if (line === "WHILE ISBLOCKED") {
+            cond = getBlockAhead(state, level.grid) === "wall";
+          } else if (line === "WHILE NOT ISBLOCKED") {
+            cond = getBlockAhead(state, level.grid) !== "wall";
+          } else if (line === "WHILE GETBLOCK == berry") {
+            cond = getBlockAhead(state, level.grid) === "berry";
+          } else if (line === "WHILE GETBLOCK == free") {
+            cond =
+              getBlockAhead(state, level.grid) === "empty" ||
+              getBlockAhead(state, level.grid) === "start";
           }
         }
+        i = blockEnd;
+        continue;
       }
-      if (cond) {
-        i++;
-        stack.push(i - 1); // Merke WHILE-Start
-      } else {
-        i = endIdx + 1;
-      }
-    } else {
-      // Normale Kommandos: Finde passendes Kommando in der Liste
+      // Normale Kommandos
       const cmd = PSEUDOCODE_COMMANDS.find((c) => c.pattern.test(line));
       if (cmd && cmd.execute) {
         const newState = cmd.execute({
@@ -138,5 +174,6 @@ export function executePseudoCode(
       i++;
     }
   }
+  runBlock(0, lines.length);
   return { states: history, berries };
 }

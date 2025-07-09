@@ -13,6 +13,73 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ value, onChange }) => {
   const lines = value.split(/\r?\n/);
   const lineCount = Math.max(8, lines.length);
 
+  // Handler für Tab, Shift+Tab, Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const { selectionStart, selectionEnd, value } = textarea;
+    // Tab: 2 Spaces einfügen
+    if (e.key === "Tab" && !e.shiftKey) {
+      e.preventDefault();
+      const before = value.slice(0, selectionStart);
+      const after = value.slice(selectionEnd);
+      onChange(before + "  " + after);
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = selectionStart + 2;
+      }, 0);
+    }
+    // Shift+Tab: 2 Spaces am Zeilenanfang entfernen
+    else if (e.key === "Tab" && e.shiftKey) {
+      e.preventDefault();
+      const start = value.lastIndexOf("\n", selectionStart - 1) + 1;
+      if (value.slice(start, start + 2) === "  ") {
+        onChange(value.slice(0, start) + value.slice(start + 2));
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = selectionStart - 2;
+        }, 0);
+      }
+    }
+    // Enter: Einrückung übernehmen oder automatisch erhöhen nach IF/WHILE/ELSE
+    else if (e.key === "Enter") {
+      const start = value.lastIndexOf("\n", selectionStart - 1) + 1;
+      const line = value.slice(start, selectionStart);
+      const indent = line.match(/^ */)?.[0] || "";
+      const trimmed = line.trim();
+      // Nach IF/WHILE/ELSE automatisch +2 Spaces
+      const shouldIndent = /^(IF |WHILE |ELSE$)/.test(trimmed);
+      const newIndent = shouldIndent ? indent + "  " : indent;
+      e.preventDefault();
+      const before = value.slice(0, selectionStart);
+      const after = value.slice(selectionEnd);
+      onChange(before + "\n" + newIndent + after);
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd =
+          selectionStart + 1 + newIndent.length;
+      }, 0);
+    }
+    // Backspace am Zeilenanfang: Einrückung auf vorheriges Blockniveau reduzieren
+    else if (e.key === "Backspace") {
+      const start = value.lastIndexOf("\n", selectionStart - 1) + 1;
+      if (selectionStart === selectionEnd && selectionStart === start) {
+        // Am Zeilenanfang: Reduziere Einrückung um 2 Spaces, falls vorhanden
+        const prevLineStart = value.lastIndexOf("\n", start - 2) + 1;
+        const prevLine = value.slice(prevLineStart, start - 1);
+        const prevIndent = prevLine.match(/^ */)?.[0] || "";
+        if (
+          prevIndent.length < (value.slice(start, start + 2) === "  " ? 2 : 0)
+        )
+          return;
+        if (value.slice(start, start + 2) === "  ") {
+          e.preventDefault();
+          onChange(value.slice(0, start) + value.slice(start + 2));
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = selectionStart;
+          }, 0);
+        }
+      }
+    }
+  };
+
   return (
     <div
       style={{
@@ -92,6 +159,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ value, onChange }) => {
             id="pseudo-code"
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             rows={lineCount}
             style={{
               fontFamily: "inherit",

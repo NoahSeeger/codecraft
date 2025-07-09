@@ -54,51 +54,49 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                 padding: "12px 18px",
                 cursor: "pointer",
                 transition: "background 0.2s, border 0.2s",
-                gap: 18,
                 fontFamily: "inherit",
+                gap: 0,
               }}
             >
+              {/* Name */}
               <span
                 style={{
                   fontWeight: "bold",
                   color: "var(--terminal-green)",
                   fontSize: 18,
-                  minWidth: 120,
+                  minWidth: 180,
+                  display: "inline-block",
+                  textAlign: "left",
                 }}
               >
                 {level.name}
               </span>
+              {/* Sterne */}
               <span
                 style={{
                   color: "var(--terminal-yellow)",
                   fontSize: 18,
-                  marginLeft: 8,
+                  minWidth: 90,
+                  display: "inline-block",
+                  textAlign: "center",
                 }}
               >
                 {"★".repeat(level.difficulty)}
                 {"☆".repeat(5 - level.difficulty)}
               </span>
+              {/* Haken */}
               <span
                 style={{
-                  flex: 1,
-                  color: "var(--terminal-cyan)",
-                  fontSize: 15,
-                  marginLeft: 16,
+                  minWidth: 40,
+                  display: "inline-block",
+                  textAlign: "center",
+                  fontSize: 22,
                 }}
               >
-                {level.tutorial}
+                {completed.has(level.id) ? (
+                  <span style={{ color: "var(--terminal-green)" }}>✔️</span>
+                ) : null}
               </span>
-              {completed.has(level.id) && (
-                <span
-                  style={{
-                    color: "var(--terminal-green)",
-                    fontSize: 22,
-                    marginLeft: 16,
-                  }}
-                >
-                  ✔️
-                </span>
-              )}
             </div>
           </Link>
         ))}

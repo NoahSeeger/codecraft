@@ -76,65 +76,68 @@ export const PSEUDOCODE_COMMANDS: PseudoCodeCommand[] = [
       if (berries[key] === false) berries[key] = true;
     },
   },
-  // Kontrollstrukturen und weitere Kommandos können hier ergänzt werden
+  // Kontrollstrukturen und weitere Kommandos
   {
     name: "IF ISBLOCKED",
     pattern: /^IF ISBLOCKED$/,
-    description: "Falls das Feld vor dem Roboter blockiert ist (Wand).",
-    example: "IF ISBLOCKED",
+    description:
+      "Falls das Feld vor dem Roboter blockiert ist (Wand). Block durch Einrückung!",
+    example: "IF ISBLOCKED\n  TURN RIGHT",
   },
   {
     name: "IF NOT ISBLOCKED",
     pattern: /^IF NOT ISBLOCKED$/,
-    description: "Falls das Feld vor dem Roboter frei ist.",
-    example: "IF NOT ISBLOCKED",
+    description:
+      "Falls das Feld vor dem Roboter frei ist. Block durch Einrückung!",
+    example: "IF NOT ISBLOCKED\n  MOVE",
   },
   {
     name: "IF GETBLOCK == berry",
     pattern: /^IF GETBLOCK == berry$/,
-    description: "Falls das Feld vor dem Roboter eine Berry ist.",
-    example: "IF GETBLOCK == berry",
+    description:
+      "Falls das Feld vor dem Roboter eine Berry ist. Block durch Einrückung!",
+    example: "IF GETBLOCK == berry\n  PICKUP",
   },
   {
     name: "IF GETBLOCK == free",
     pattern: /^IF GETBLOCK == free$/,
-    description: "Falls das Feld vor dem Roboter frei ist.",
-    example: "IF GETBLOCK == free",
+    description:
+      "Falls das Feld vor dem Roboter frei ist. Block durch Einrückung!",
+    example: "IF GETBLOCK == free\n  MOVE",
   },
   {
     name: "ELSE",
     pattern: /^ELSE$/,
-    description: "Alternative Anweisungen, falls IF-Bedingung nicht zutrifft.",
-    example: "ELSE",
-  },
-  {
-    name: "END",
-    pattern: /^END$/,
-    description: "Beendet einen IF- oder WHILE-Block.",
-    example: "END",
+    description:
+      "Alternative Anweisungen, falls IF-Bedingung nicht zutrifft. Block durch Einrückung!",
+    example: "ELSE\n  TURN LEFT",
   },
   {
     name: "WHILE ISBLOCKED",
     pattern: /^WHILE ISBLOCKED$/,
-    description: "Solange das Feld vor dem Roboter blockiert ist.",
-    example: "WHILE ISBLOCKED",
+    description:
+      "Solange das Feld vor dem Roboter blockiert ist. Block durch Einrückung!",
+    example: "WHILE ISBLOCKED\n  TURN RIGHT",
   },
   {
     name: "WHILE NOT ISBLOCKED",
     pattern: /^WHILE NOT ISBLOCKED$/,
-    description: "Solange das Feld vor dem Roboter frei ist.",
-    example: "WHILE NOT ISBLOCKED",
+    description:
+      "Solange das Feld vor dem Roboter frei ist. Block durch Einrückung!",
+    example: "WHILE NOT ISBLOCKED\n  MOVE",
   },
   {
     name: "WHILE GETBLOCK == berry",
     pattern: /^WHILE GETBLOCK == berry$/,
-    description: "Solange das Feld vor dem Roboter eine Berry ist.",
-    example: "WHILE GETBLOCK == berry",
+    description:
+      "Solange das Feld vor dem Roboter eine Berry ist. Block durch Einrückung!",
+    example: "WHILE GETBLOCK == berry\n  PICKUP",
   },
   {
     name: "WHILE GETBLOCK == free",
     pattern: /^WHILE GETBLOCK == free$/,
-    description: "Solange das Feld vor dem Roboter frei ist.",
-    example: "WHILE GETBLOCK == free",
+    description:
+      "Solange das Feld vor dem Roboter frei ist. Block durch Einrückung!",
+    example: "WHILE GETBLOCK == free\n  MOVE",
   },
 ];
